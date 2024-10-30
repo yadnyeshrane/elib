@@ -36,7 +36,36 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
     });
 
     //response
-    res.json({ token: token });
+    res.status(201).json({ token: token });
 };
 
-export { createUser };
+const loginUser = async (req: Request, res: Response, next: NextFunction) => {
+    const { email, pwd } = req.body;
+    try {
+        if (!email || !pwd) {
+            const error = createHttpError(400, "All fields required");
+            return next(error);
+        }
+        const user = await userModule.findOne({ email: email });
+        if (!user) {
+            const error = createHttpError(404, "User does not exist");
+            return next(error);
+        }
+        const isMatch = await bcrypt.compare(pwd, user.pwd);
+        if (!isMatch) {
+            const error = createHttpError(
+                400,
+                "Username or password is incorrect"
+            );
+            return next(error);
+        }
+        const token = sign({ sub: user._id }, config.jwtSecret as string, {
+            expiresIn: "7d",
+        });
+        res.json({ accesstoken: token });
+    } catch (error) {
+        console.log("Error", error);
+    }
+};
+
+export { createUser, loginUser };
