@@ -3,6 +3,8 @@ import createHttpError from "http-errors";
 import userModule from "./userModule";
 import bcrypt from "bcrypt";
 import { User } from "./userTypes";
+import { sign } from "jsonwebtoken";
+import { config } from "../config/conifg";
 
 const createUser = async (req: Request, res: Response, next: NextFunction) => {
     //validation
@@ -27,9 +29,14 @@ const createUser = async (req: Request, res: Response, next: NextFunction) => {
     } catch (error) {
         return next(createHttpError(500, "Error while creating user."));
     }
+    //Token generation
+
+    const token = sign({ sub: newUser._id }, config.jwtSecret as string, {
+        expiresIn: "7d",
+    });
 
     //response
-    res.json({ message: "user created usss" });
+    res.json({ token: token });
 };
 
 export { createUser };
